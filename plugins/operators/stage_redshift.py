@@ -33,6 +33,8 @@ class StageToRedshiftOperator(BaseOperator):
         FORMAT AS JSON '{}'
         """
 
+    template_fields = ["execution_date"]
+
     @apply_defaults
     def __init__(
         self,
@@ -66,6 +68,7 @@ class StageToRedshiftOperator(BaseOperator):
             redshift_hook.run(truncate_sql)
 
         # partitionBy("year", "month")
+        self.log.info(f"Execution date: {self.execution_date}")
         execution_date = parser.parse(self.execution_date)
         s3_path = self.s3_bucket + "/{}/{}".format(
             execution_date.year, execution_date.month
