@@ -26,7 +26,7 @@ Add default parameters according to these guidelines:
 
 The graph view of our dags and dependencies follows the flow shown in the image below:
 
-![example-dat.png](./example-dat.png "DAG with task dependencies")
+![example-dat.png](https://github.com/kzinmr/dp-dataengineeringnd/blob/75c3f68693d832409bc5ce8b09ed09a54038deaa/example-dag.png "DAG with task dependencies")
 
 
 ## Operators outline
