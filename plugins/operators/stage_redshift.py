@@ -12,8 +12,9 @@ class StageToRedshiftOperator(BaseOperator):
         aws_credentials_id: AWS credentials for accessing S3
         table_name: The name of staging table.
         auto_or_jsonpaths: 'auto' or JSONPaths file used to parse JSON.
+        partitioned_by_ts: Whether files in S3 are partitioned by timestamps.
         execution_date: A templated field of the execution time that enables
-        to load timestamped files from S3 based on it and run backfills.
+        to load timestamped files from S3 and run backfills.
         truncate_table: Whether to TRUNCATE table for initialization.
     Returns:
     Raises:
@@ -44,6 +45,7 @@ class StageToRedshiftOperator(BaseOperator):
         s3_bucket="",  # s3://udacity-dend/log_data, song_data
         auto_or_jsonpaths="auto",  # log_json_path.json
         truncate_table=True,
+        partitioned_by_ts=False,
         execution_date="{{ execution_date }}",
         *args,
         **kwargs,
@@ -56,6 +58,7 @@ class StageToRedshiftOperator(BaseOperator):
         self.aws_credentials_id = aws_credentials_id
         self.auto_or_jsonpaths = auto_or_jsonpaths
         self.truncate_table = truncate_table
+        self.partitioned_by_ts = partitioned_by_ts
         self.execution_date = execution_date
 
     def execute(self, context):
@@ -67,12 +70,14 @@ class StageToRedshiftOperator(BaseOperator):
             truncate_sql = self.TRUNCATE_SQL.format(self.table_name)
             redshift_hook.run(truncate_sql)
 
-        # partitionBy("year", "month")
+        s3_path = self.s3_bucket
         self.log.info(f"Execution date: {self.execution_date}")
-        execution_date = parser.parse(self.execution_date)
-        s3_path = self.s3_bucket + "/{}/{}".format(
-            execution_date.year, execution_date.month
-        )
+        if self.partitioned_by_ts:
+            # assume partitioned by ("year", "month")
+            execution_date = parser.parse(self.execution_date)
+            s3_path = self.s3_bucket + "/{}/{}".format(
+                execution_date.year, execution_date.month
+            )
 
         aws_hook = AwsHook(self.aws_credentials_id)
         credentials = aws_hook.get_credentials()
