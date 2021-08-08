@@ -1,9 +1,11 @@
 import datetime
+import os
 from airflow import DAG
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators.dummy_operator import DummyOperator
 
-CREATE_TABLES_SQL_PATH = "create_tables.sql"
+CUR_DIR = os.path.abspath(os.path.dirname(__file__))
+CREATE_TABLES_SQL_PATH = f"{CUR_DIR}/create_tables.sql"
 
 dag = DAG(
     "setup_database",
@@ -20,12 +22,12 @@ with open(CREATE_TABLES_SQL_PATH) as fp:
 
 drop_create_table_sqls = [
     PostgresOperator(
-        task_id="create_logdata_table",
+        task_id=f"create_table_{i}",
         dag=dag,
         postgres_conn_id="redshift",
         sql=sql_statement.strip(),
     )
-    for sql_statement in sql_statements
+    for i, sql_statement in enumerate(sql_statements)
 ]
 
 for drop_create_table in drop_create_table_sqls:
